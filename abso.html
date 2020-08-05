@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Trackpad</title>
+	<style>
+body {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0px;
+    background: black;
+    padding: 0px;
+}
+
+body > * {
+    flex-grow: 1;
+    width:200px;
+}
+.holder {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+		.holder * {
+			flex-grow:1;
+		}
+
+.holder input {
+    text-align: center;
+    border: none;
+    padding: 0px;
+    flex: 0 0 100%;
+}
+.holder div {
+    background: #333;
+    margin: 1px;
+}
+	</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		var socket = io();
+		var canvas = document.createElement("div");
+		var size = window.innerWidth > window.innerHeight ? window.innerHeight : window.innerWidth;
+
+		canvas.addEventListener("touchmove", event => {
+			event.preventDefault();
+			event.stopPropagation();
+			socket.emit("abso",{
+				x: event.touches[0].clientX / size,
+				y: event.touches[0].clientY  / size
+			})
+		})
+		canvas.addEventListener("touchstart", event => {
+			event.preventDefault();
+			event.stopPropagation();
+			socket.emit("abso",{
+				x: event.touches[0].clientX / size,
+				y: event.touches[0].clientY  / size
+			})
+		})
+
+		document.body.appendChild(canvas);
+
+	</script>
+</body>
+</html>

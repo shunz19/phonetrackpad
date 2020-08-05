@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Trackpad</title>
+	<style>
+body {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0px;
+    background: black;
+    padding: 0px;
+}
+
+body > * {
+    flex-grow: 1;
+    width:200px;
+}
+.holder {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.holder * {
+	flex-grow:1;
+}
+
+.holder input {
+    text-align: center;
+    border: none;
+    padding: 0px;
+    flex: 0 0 100%;
+}
+.holder div {
+    background: #333;
+    margin: 1px;
+}
+	</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		var socket = io();
+		var canvas = document.createElement("div");
+
+		var leftButton = document.createElement("div");
+		leftButton.addEventListener("touchstart",() => {
+			socket.emit("ldown");
+		})
+		leftButton.addEventListener("touchend",()=> {
+			socket.emit("lup");
+		})
+		var rightButton = document.createElement("div");
+		rightButton.addEventListener("touchstart",() => {
+			socket.emit("rdown");
+		})
+		rightButton.addEventListener("touchend",() => {
+			socket.emit("rup");
+		})
+		var textInput = document.createElement("input");
+		textInput.setAttribute("type","text");
+		textInput.addEventListener("keyup",event => {
+			var key = textInput.value;
+			switch(event.keyCode) {
+				case 13:
+				key = "enter";
+				break;
+				case 8:
+				key = "backspace";
+			}
+			socket.emit("key",key);
+			textInput.value ="";
+		})
+
+		var holder = document.createElement("div");
+		holder.className = "holder";
+		holder.appendChild(textInput);
+		holder.appendChild(leftButton);
+		holder.appendChild(rightButton);
+
+		var currentPos = {};
+		var mouseIndex = 0;
+		var moved = false;
+		var li;
+		canvas.addEventListener("touchstart",event => {
+			moved = false;
+			mouseIndex = event.touches.length - 1;
+			li = setTimeout(() => {
+				socket.emit("ldown");
+			},200)
+			event.preventDefault();
+			event.stopPropagation();
+			currentPos.x = event.touches[mouseIndex].clientX;
+			currentPos.y = event.touches[mouseIndex].clientY;
+			socket.emit("start");
+		})
+
+		canvas.addEventListener("touchmove", event => {
+			event.preventDefault();
+			event.stopPropagation();
+			if(Math.abs(event.touches[mouseIndex].clientX - currentPos.x) > 1 || 
+				Math.abs(event.touches[mouseIndex].clientY - currentPos.y) > 1) {
+				if(!moved) moved = true;	
+			}
+			if(moved) clearTimeout(li);
+			socket.emit("move",{
+				x: (event.touches[mouseIndex].clientX - currentPos.x) * 2,
+				y: (event.touches[mouseIndex].clientY - currentPos.y) * 2
+			})
+		})
+
+		canvas.addEventListener("touchend", event => {
+			if(!moved) {
+				socket.emit("ldown");
+			}
+			socket.emit("lup");
+			clearTimeout(li);
+			lastUp = Date.now();
+		})
+
+		socket.on("s",data => {
+			console.log("ata:image/bmp;base64," + data + "")
+			//canvas.style.backgroundImage = "url(data:image/bmp;base64," + data + ")"
+		})
+
+		document.body.appendChild(holder);
+		document.body.appendChild(canvas);
+
+	</script>
+</body>
+</html>
